@@ -83,11 +83,11 @@ align-items:center;
         userBallSpeed = parseFloat(e.target.value);
       });
       
-    }, 0);
     document.body.onclick = (e) => {
       getQr("body").requestFullscreen();
       if (!gameEnd) ringtone.play();
     }
+  },500);
   }
 
   function gameInit() { //main game logic is in this fn
@@ -170,7 +170,7 @@ align-items:center;
         this.len = len;
         this.holes = holes;
         this.position = { x: canvas.width + 30, y: canvas.height - 50 }
-        this.xSpeed = 1;
+        this.xSpeed = 0.1;
         this.img = enemies[random(0, enemies.length - 1)];
 
       }
@@ -324,7 +324,7 @@ align-items:center;
     let pushSpeed = 0;
     let maxToPush = 200;
     let roadMarksGab = 20;
-    let holeVelocity = 0.0005
+    let holeVelocity = 0.0002
 
     setTimeout(() => {
       getQr("button").addEventListener("click", (e) => {
@@ -335,9 +335,12 @@ align-items:center;
           el.innerText = "PAUSE"
           frameId = requestAnimationFrame(animate)
           initUpdate = false;
+          globalGameControl=false
         }
         else {
           gameEnd = true;
+          initUpdate=true;
+          globalGameControl=true
           el.innerText = "PLAY";
         }
       });
@@ -395,7 +398,7 @@ align-items:center;
               road()
               drawBall(ballPosition.x, ballPosition.y, `rgb(${random(0,255)},${random(0,255)},${random(0,255)}`)
 
-              roadHoles.map(e => e.draw())
+              //roadHoles.map(e => e.draw())
               writeText("x", ballPosition.x + 30, ballPosition.y + 20, randomColor(), 30);
               roadMarks.map(e => e.draw())
 
@@ -409,6 +412,7 @@ align-items:center;
             gameOver.play();
             /*game over*/
             gameEnd = true;
+            globalGameControl=true;
             cancelAnimationFrame(frameId)
             setTimeout(() => {
               clearInterval(setCtv)
@@ -417,21 +421,23 @@ align-items:center;
               velocity = 1;
               initUpdate = true;
               gameEnd = true;
+              
               roadHoles.splice(0, roadHoles.length)
               //frameId=requestAnimationFrame(animation);
-              animate()
+            
             }, 3000);
 
 
 
-            setTimeout(() => {
+          return  setTimeout(() => {
               swal.fire("Game over!<br>your score is : " + score + "<br>your previous score is : " + (localStorage.getItem("score") ? localStorage.getItem("score") : "0"), "<br>click ok to play again,<br> Tip:<br>always jump when enemy comming closer to you!").then(() => {
 
-                localStorage.setItem("score", score)
+                localStorage.setItem("score", score);
+                roadHoles.splice(0,roadHoles.length)
                 score = 0;
               });
 
-            }, 30);
+            }, 3000);
 
 
           }
@@ -443,10 +449,16 @@ align-items:center;
         });
       }
       else {
+        pushSpeed=0;
+        pushSpeed = 0;
+        maxToPush = 200;
+        roadMarksGab = 20;
+        holeVelocity = 0.0002;
+        roadHoles.splice(0,roadHoles.length);
         writeText("Click 'PLAY' BUTTON TO START", 30, canvas.height / 2, randomColor(), 25)
       }
 
-      if (gameEnd) return
+      if (gameEnd || initUpdate) return
       if (pushSpeed >= maxToPush) {
         roadHoles.push(new RoadHoles(20, 0))
         //console.log(roadHoles)
@@ -457,7 +469,8 @@ align-items:center;
       pushSpeed += (1 + Math.floor(holeVelocity))
       maxToPush -= 0.05;
       roadMarksGab -= (velocity / 3);
-      holeVelocity += 0.00005
+      holeVelocity += 0.00005;
+      if(globalGameControl)return cancelAnimationFrame(frameId)
       frameId = requestAnimationFrame(animate)
     }
 
